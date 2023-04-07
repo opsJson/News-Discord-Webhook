@@ -1,6 +1,6 @@
 const { EmbedBuilder, WebhookClient } = require("discord.js");
 const cheerio = require("cheerio");
-const fetch = require("node-fetch@2");
+const fetch = require("node-fetch");
 
 const posted = [];
 const url = "webhook-url";
