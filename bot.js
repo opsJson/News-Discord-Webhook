@@ -4,43 +4,47 @@ const fetch = require("node-fetch");
 
 let scrap_count = 2;
 const posted = [];
-const url = "webhook-url";
+const url = "discord-webhook";
 const webhookClient = new WebhookClient({url});
 
 async function scrap(url, func) {
+	let $;
+	
 	try {
 		const response = await fetch(url);
 		const html = await response.text();
-		const $ = cheerio.load(html);
-		const articles = $("article");
-		
-		articles.each((index, article) => {
-			const obj = func($(article));
-			
-			if (scrap_count == 0 && !posted.includes(obj.url)) {
-				if (posted.length > 50) posted.unshift();
-				posted.push(obj.url);
-			}
-			else return;
-					
-			const embed = new EmbedBuilder()
-				.setTitle(obj.title)
-				.setDescription(obj.description)
-				.setURL(obj.url)
-				.setImage(obj.image || undefined)
-				.setColor(obj.color || 0xFBD007)
-				.setFooter({text: obj.footer, iconURL: obj.iconURL});
-
-			webhookClient.send({
-				embeds: [embed]
-			});
-		});
-		
-		if (scrap_count) scrap_count--;
+		$ = cheerio.load(html);
 	}
 	catch (e) {
-		console.error(e);
+		console.log(e);
+		return;
 	}
+	
+	$("article").each((index, article) => {
+		const obj = func($(article));
+		
+		if (scrap_count != 0) return;
+		if (posted.includes(obj.url)) return;
+		
+		if (posted.length > 50) posted.shift();
+		posted.push(obj.url);
+				
+		const embed = new EmbedBuilder()
+			.setTitle(obj.title)
+			.setDescription(obj.description)
+			.setURL(obj.url)
+			.setImage(obj.image || undefined)
+			.setColor(obj.color)
+			.setFooter({text: obj.footer, iconURL: obj.iconURL});
+
+		webhookClient.send({
+			embeds: [embed]
+		});
+	});
+	
+	if (scrap_count) scrap_count--;
+	else if (scrap_count < 0) throw "scrap_count must be equal to amount of scraps!";
+	
 }
 
 function scheduler() {
