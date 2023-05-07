@@ -2,6 +2,7 @@ const { EmbedBuilder, WebhookClient } = require("discord.js");
 const cheerio = require("cheerio");
 const fetch = require("node-fetch");
 
+let scrap_count = 2;
 const posted = [];
 const url = "webhook-url";
 const webhookClient = new WebhookClient({url});
@@ -16,7 +17,7 @@ async function scrap(url, func) {
 		articles.each((index, article) => {
 			const obj = func($(article));
 			
-			if (!posted.includes(obj.url)) {
+			if (scrap_count == 0 && !posted.includes(obj.url)) {
 				if (posted.length > 50) posted.unshift();
 				posted.push(obj.url);
 			}
@@ -34,6 +35,8 @@ async function scrap(url, func) {
 				embeds: [embed]
 			});
 		});
+		
+		if (scrap_count) scrap_count--;
 	}
 	catch (e) {
 		console.error(e);
@@ -45,7 +48,7 @@ function scheduler() {
 		
 		return {
 			title: 			article.find("h2 > b").text(),
-			description: 	article.find("h3").text() + "\n\n" + article.find("a").attr("title"),
+			description: 	article.find("a").attr("title") + "\n\n" + article.find("h3").text(),
 			image: 			article.find("img").attr("src"),
 			url: 			article.find("a").attr("href"),
 			color: 			0xFFFFFF,
